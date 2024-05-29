@@ -15,6 +15,7 @@ class ClickableLabel(QLabel):
         self.setPixmap(pixmap)
         self.file_path = file_path
         self.db_processor = db_processor
+        self.parent = parent
 
     def mouseDoubleClickEvent(self, event):
         subprocess.Popen([self.file_path], shell=True)
@@ -30,7 +31,7 @@ class ClickableLabel(QLabel):
         if os.path.exists(self.file_path):
             os.remove(self.file_path)
             self.db_processor.delete_photo_info(os.path.basename(self.file_path))
-            self.parent().load_photos()
+            self.parent.load_photos()
 
 
 class CustomFaceLabel(QLabel):

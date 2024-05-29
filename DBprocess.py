@@ -164,7 +164,7 @@ class DBprocess:
     # 更新人脸名称的方法
     def update_face_name(self, face_id, new_name):
         try:
-            query = "UPDATE Faces SET FaceLabel = ? WHERE FaceLabel = ?"
+            query = "UPDATE Faces SET FaceLabel = ? WHERE FaceID = ?"
             self.execute_query(query, (new_name, face_id))
         except Exception as e:
             print(f"更新人脸名称时出现错误: {e}")
