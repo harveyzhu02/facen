@@ -9,13 +9,14 @@ from photo_importer import PhotoImporter
 
 
 class ClickableLabel(QLabel):
-    def __init__(self, pixmap, file_path, parent=None, db_processor = None):
+    def __init__(self, pixmap, file_path, photo_id, parent=None, db_processor = None):
         super().__init__(parent)
         print(f"Creating ClickableLabel for {file_path}")  # 打印信息帮助追踪
         self.setPixmap(pixmap)
         self.file_path = file_path
         self.db_processor = db_processor
         self.parent = parent
+        self.photo_id = photo_id
 
     def mouseDoubleClickEvent(self, event):
         subprocess.Popen([self.file_path], shell=True)
@@ -30,7 +31,7 @@ class ClickableLabel(QLabel):
     def delete_photo(self):
         if os.path.exists(self.file_path):
             os.remove(self.file_path)
-            self.db_processor.delete_photo_info(os.path.basename(self.file_path))
+            self.db_processor.delete_photo_info(self.photo_id)
             self.parent.load_photos()
 
 
@@ -78,7 +79,7 @@ class LoadPhotosTask(QRunnable):
                 if os.path.exists(thumbnail_path):
                     row = index // self.photos_per_row
                     col = index % self.photos_per_row
-                    photo_data.append((thumbnail_path, photo[8], row, col, capture_date))
+                    photo_data.append((thumbnail_path, photo[8], row, col, capture_date, photo[0]))
             db_processor.close()  # 确保关闭数据库连接
             self.signals.finished.emit(photo_data)
             print("子线程：照片数据加载完毕，准备发送信号")
@@ -295,13 +296,13 @@ class PhotoAlbumApp(QMainWindow):
 
     def display_loaded_photos(self, photo_data):
         print("主线程：收到子线程信号，开始更新UI")
-        for thumbnail_path, file_path, row, col, capture_date in photo_data:
+        for thumbnail_path, file_path, row, col, capture_date, photo_id in photo_data:
             pixmap = QPixmap(thumbnail_path)
             if not pixmap.isNull():
                 photo_widget = QWidget()
                 photo_layout = QVBoxLayout(photo_widget)
 
-                photo_label = ClickableLabel(pixmap.scaled(100, 100, Qt.KeepAspectRatio), file_path, self, self.db_processor)
+                photo_label = ClickableLabel(pixmap.scaled(100, 100, Qt.KeepAspectRatio), file_path, photo_id, self, self.db_processor)
                 photo_layout.addWidget(photo_label)
 
                 # date_label = QLabel(capture_date)
@@ -436,7 +437,7 @@ class PhotoAlbumApp(QMainWindow):
                 photo_widget = QWidget()
                 photo_layout = QVBoxLayout(photo_widget)
 
-                photo_label = ClickableLabel(QPixmap(thumbnail_path).scaled(100, 100, Qt.KeepAspectRatio), photo[8], self, self.db_processor)
+                photo_label = ClickableLabel(QPixmap(thumbnail_path).scaled(100, 100, Qt.KeepAspectRatio), photo[8], photo[0], self, self.db_processor)
                 photo_layout.addWidget(photo_label)
 
                 self.photo_layout.addWidget(photo_widget, row, col)
@@ -497,7 +498,7 @@ class PhotoAlbumApp(QMainWindow):
                 photo_widget = QWidget()
                 photo_layout = QVBoxLayout(photo_widget)
 
-                photo_label = ClickableLabel(QPixmap(thumbnail_path).scaled(100, 100, Qt.KeepAspectRatio), photo[8], self, self.db_processor)
+                photo_label = ClickableLabel(QPixmap(thumbnail_path).scaled(100, 100, Qt.KeepAspectRatio), photo[8], photo[0], self, self.db_processor)
                 photo_layout.addWidget(photo_label)
 
                 self.photo_layout.addWidget(photo_widget, row, col)
