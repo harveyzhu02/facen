@@ -49,7 +49,7 @@ class CustomFaceLabel(QLabel):
         if ok and new_name:
             try:
                 self.setText(new_name)
-                self.parent().db_processor.update_face_name(self.face_id, new_name)
+                self.parent().parent().db_processor.update_face_name(self.face_id, new_name)
             except Exception as e:
                 QMessageBox.warning(self, "修改错误", f"无法修改姓名: {e}")
 

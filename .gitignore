@@ -1,0 +1,4 @@
+images/*
+thumbnails/*
+data/*
+__pycache__/*
