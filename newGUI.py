@@ -33,10 +33,9 @@ class ClickableLabel(QLabel):
 
 
 class CustomFaceLabel(QLabel):
-    def __init__(self, text, face_id, parent):
+    def __init__(self, text, face_id, parent=None):
         super().__init__(text, parent)
         self.face_id = face_id
-        self.db_processor = parent.db_processor
 
     def contextMenuEvent(self, event):
         menu = QMenu(self)
@@ -50,7 +49,7 @@ class CustomFaceLabel(QLabel):
         if ok and new_name:
             try:
                 self.setText(new_name)
-                self.db_processor.update_face_name(self.face_id, new_name)
+                self.parent().db_processor.update_face_name(self.face_id, new_name)
             except Exception as e:
                 QMessageBox.warning(self, "修改错误", f"无法修改姓名: {e}")
 
@@ -200,14 +199,18 @@ class PhotoAlbumApp(QMainWindow):
 
     def create_sidebar(self, layout):
         # 为侧边栏创建按钮
-        icons = ["import", "manage", "edit", "share", "options"]
-        texts = ["导入", "管理", "编辑", "分享", "选项"]
+        # icons = ["import", "manage", "edit", "share", "options"]
+        # texts = ["导入", "管理", "编辑", "分享", "选项"]
+        icons = ["import", "options", "about"]
+        texts = ["导入", "选项", "关于"]
         for icon, text in zip(icons, texts):
             button = self.create_tool_button(f"icons/{icon}.svg", text)
             if text == "导入":
                 button.clicked.connect(self.import_photos_and_refresh)
             elif text == "选项":
                 button.clicked.connect(self.show_options_menu)
+            elif text == "关于":
+                button.clicked.connect(self.show_about_dialog)  # 连接到显示关于信息的方法
             layout.addWidget(button)
 
     def create_search_bar(self, layout):
@@ -328,7 +331,7 @@ class PhotoAlbumApp(QMainWindow):
             QMessageBox.warning(self, "清除布局错误", f"无法清除布局: {e}")
 
     def clear_data(self):
-        reply = QMessageBox.question(self, '确认', '是否删除已有照片数据？', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        reply = QMessageBox.question(self, '确认', '是否删除所有照片数据？', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
             try:
                 # 删除 images 目录下的照片
@@ -445,6 +448,20 @@ class PhotoAlbumApp(QMainWindow):
         clear_data_action = menu.addAction("清除数据")
         clear_data_action.triggered.connect(self.clear_data)
         menu.exec_(QCursor.pos())
+
+    def show_about_dialog(self):
+        # 创建关于对话框
+        about_text = (
+            "家庭相册智能管理软件\n\n"
+            "版本：0.0.1\n"
+            "作者：墨书白\n"
+            "指导老师：胡洁婷\n"
+            "单位：上海市闵行区七宝第三中学\n\n"
+            "本软件用于管理和浏览家庭照片。可以按照照片拍摄日期排序，以及按照人脸分类，能够修改不同人脸对应的名字。\n\n"
+            "本软件仍在开发完善中，目前功能比较单一，请大家海涵。\n未来会增加分享、管理功能，改善人脸识别逻辑，采用多线程技术提高处理速度。\n"
+            "更多信息，请联系作者 leo_moo@126.com。"
+        )
+        QMessageBox.information(self, "关于", about_text)
 
     def sort_photos_by_person(self):
 
