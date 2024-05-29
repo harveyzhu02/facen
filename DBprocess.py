@@ -164,7 +164,7 @@ class DBprocess:
     # 更新人脸名称的方法
     def update_face_name(self, face_id, new_name):
         try:
-            query = "UPDATE Faces SET FaceLabel = ? WHERE FaceID = ?"
+            query = "UPDATE Faces SET FaceLabel = ? WHERE FaceLabel = ?"
             self.execute_query(query, (new_name, face_id))
         except Exception as e:
             print(f"更新人脸名称时出现错误: {e}")
@@ -172,8 +172,14 @@ class DBprocess:
     # 清除所有照片的方法
     def clear_all_photos(self):
         try:
-            query = "DELETE FROM Photos"
-            self.execute_query(query)
+            with self.conn:
+                query = "DELETE FROM PhotoInfoTable"
+                self.execute_query(query)
+                query = "DELETE FROM PhotoFaceLink"
+                self.execute_query(query)  # 同时清除人脸关系表中的信息
+                query = "DELETE FROM Faces"
+                self.execute_query(query)  # 同时清除人脸表中的信息
+            print("成功清除所有照片信息")
         except Exception as e:
             print(f"清除所有照片时出现错误: {e}")
 
@@ -186,14 +192,15 @@ class DBprocess:
 
     def query_all_photo_info(self):
         return self.execute_query('SELECT * FROM PhotoInfoTable')
+
     def query_all_photo_info_face(self):
         return self.execute_query('SELECT * FROM PhotoInfoTable,PhotoFaceLink,Faces where PhotoInfoTable.PhotoID=PhotoFaceLink.PhotoID and PhotoFaceLink.FaceID=Faces.FaceID')
 
     def query_photo_info(self, photo_id):
         return self.execute_query('SELECT * FROM PhotoInfoTable WHERE PhotoID=?', (photo_id,))
 
-    def update_person_name(self, old_name, new_name):
-        self.execute_query('UPDATE Faces SET FaceLabel = ? WHERE FaceLabel = ?', (new_name, old_name))
+    # def update_person_name(self, old_name, new_name):
+    #     self.execute_query('UPDATE Faces SET FaceLabel = ? WHERE FaceLabel = ?', (new_name, old_name))
 
     def add_sw_config(self, config):
         self.execute_query('INSERT INTO SWConfig VALUES (?, ?, ?, ?)', config)
