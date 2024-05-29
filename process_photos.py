@@ -69,7 +69,7 @@ def process_photos(photo_source, db_processor):
         #     face_encoding = np.array(face_rec_model.compute_face_descriptor(image_array, shape, num_jitters=10, model='large'))
         #     face_encodings.append(face_encoding)
 
-        face_encodings = face_recognition.face_encodings(image_array, num_jitters=10, model='large')
+        face_encodings = face_recognition.face_encodings(image_array, num_jitters=5, model='large')
         # # 使用CNN算法进行人脸检测
         #face_locations = face_recognition.face_locations(image_array, model='cnn')
         #face_encodings = face_recognition.face_encodings(image_array, known_face_locations=face_locations)
@@ -100,7 +100,7 @@ def process_photos(photo_source, db_processor):
     # 对人脸编码进行聚类
     try:
         if len(encodings) > 0:
-            clustering = DBSCAN(eps=0.2, min_samples=3, metric="euclidean").fit(all_encodings)
+            clustering = DBSCAN(eps=0.6, min_samples=3, metric="euclidean").fit(all_encodings)
             if hasattr(clustering, 'labels_'):  # 检查属性是否存在
                 labels = clustering.labels_
                 # 仅处理新检测到的编码部分
@@ -111,8 +111,18 @@ def process_photos(photo_source, db_processor):
                         face_id = db_processor.add_face_info(encoding.tobytes(), face_label)
                         unnamed_counter += 1
                     else:
-                        face_label = existing_labels[label]  # 使用已有的标签
-                        face_id = face_id_map[face_label]  # 获取对应的FaceID
+                        # 使用已有的标签，确保标签一致性
+                        if label < len(existing_labels):
+                            face_label = existing_labels[label]  # 使用已有的标签
+                            face_id = face_id_map[face_label]  # 获取对应的FaceID
+                        else:
+                            face_label = f"未命名{unnamed_counter}"
+                            face_id = db_processor.add_face_info(encoding.tobytes(), face_label)
+                            unnamed_counter += 1
+                            # 更新标签映射
+                            existing_labels.append(face_label)
+                            face_id_map[face_label] = face_id
+
                     # 转换photo_path为photo_info_id
                     photo_info = db_processor.query_photo_info_by_hash(os.path.basename(file_hash))
                     if photo_info:
