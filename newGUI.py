@@ -9,11 +9,12 @@ from photo_importer import PhotoImporter
 
 
 class ClickableLabel(QLabel):
-    def __init__(self, pixmap, file_path, parent=None):
+    def __init__(self, pixmap, file_path, parent=None, db_processor = None):
         super().__init__(parent)
         print(f"Creating ClickableLabel for {file_path}")  # 打印信息帮助追踪
         self.setPixmap(pixmap)
         self.file_path = file_path
+        self.db_processor = db_processor
 
     def mouseDoubleClickEvent(self, event):
         subprocess.Popen([self.file_path], shell=True)
@@ -28,14 +29,15 @@ class ClickableLabel(QLabel):
     def delete_photo(self):
         if os.path.exists(self.file_path):
             os.remove(self.file_path)
-            self.parent().db_processor.delete_photo_info(os.path.basename(self.file_path))
+            self.db_processor.delete_photo_info(os.path.basename(self.file_path))
             self.parent().load_photos()
 
 
 class CustomFaceLabel(QLabel):
-    def __init__(self, text, face_id, parent=None):
+    def __init__(self, text, face_id, parent=None, db_processor = None):
         super().__init__(text, parent)
         self.face_id = face_id
+        self.db_processor = db_processor
 
     def contextMenuEvent(self, event):
         menu = QMenu(self)
@@ -49,7 +51,7 @@ class CustomFaceLabel(QLabel):
         if ok and new_name:
             try:
                 self.setText(new_name)
-                self.parent().parent().db_processor.update_face_name(self.face_id, new_name)
+                self.db_processor.update_face_name(self.face_id, new_name)
             except Exception as e:
                 QMessageBox.warning(self, "修改错误", f"无法修改姓名: {e}")
 
@@ -298,7 +300,7 @@ class PhotoAlbumApp(QMainWindow):
                 photo_widget = QWidget()
                 photo_layout = QVBoxLayout(photo_widget)
 
-                photo_label = ClickableLabel(pixmap.scaled(100, 100, Qt.KeepAspectRatio), file_path, self)
+                photo_label = ClickableLabel(pixmap.scaled(100, 100, Qt.KeepAspectRatio), file_path, self, self.db_processor)
                 photo_layout.addWidget(photo_label)
 
                 # date_label = QLabel(capture_date)
@@ -433,7 +435,7 @@ class PhotoAlbumApp(QMainWindow):
                 photo_widget = QWidget()
                 photo_layout = QVBoxLayout(photo_widget)
 
-                photo_label = ClickableLabel(QPixmap(thumbnail_path).scaled(100, 100, Qt.KeepAspectRatio), photo[8], self)
+                photo_label = ClickableLabel(QPixmap(thumbnail_path).scaled(100, 100, Qt.KeepAspectRatio), photo[8], self, self.db_processor)
                 photo_layout.addWidget(photo_label)
 
                 self.photo_layout.addWidget(photo_widget, row, col)
@@ -485,7 +487,7 @@ class PhotoAlbumApp(QMainWindow):
                 if col != 0:  # 如果当前行不为空，则开始新行
                     row += 1
                     col = 0
-                face_label = CustomFaceLabel(photo[17], capture_faceid, self)
+                face_label = CustomFaceLabel(photo[17], capture_faceid, self, self.db_processor)
                 self.photo_layout.addWidget(face_label, row, col, 1, self.calculate_photos_per_row())  # 跨越整行
                 row += 1  # 移动到下一行
                 col = 0  # 从新的一行开始
@@ -494,7 +496,7 @@ class PhotoAlbumApp(QMainWindow):
                 photo_widget = QWidget()
                 photo_layout = QVBoxLayout(photo_widget)
 
-                photo_label = ClickableLabel(QPixmap(thumbnail_path).scaled(100, 100, Qt.KeepAspectRatio), photo[8], self)
+                photo_label = ClickableLabel(QPixmap(thumbnail_path).scaled(100, 100, Qt.KeepAspectRatio), photo[8], self, self.db_processor)
                 photo_layout.addWidget(photo_label)
 
                 self.photo_layout.addWidget(photo_widget, row, col)
